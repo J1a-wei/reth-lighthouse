@@ -1,0 +1,2 @@
+# reth-lighthouse
+archive-node
