@@ -1,0 +1,86 @@
+version: "3.8"
+
+services:
+  reth:
+    image: '${RETH_IMAGE}'
+    pull_policy: always
+    container_name: reth
+    restart: unless-stopped
+    stop_signal: SIGINT
+    stop_grace_period: 2m
+    ports:
+    - 30303:30303
+    - 30303:30303/udp
+    - 8545:8545
+    - 8546:8546
+    - 8551:8551
+    volumes:
+    - /data/reth:/data
+    command:
+    - node
+    - --chain=${NETWORK}
+    - --datadir=/data
+    - --peers-file=/data/peers.file
+    - --nat=extip:${PUBLIC_IP}
+    - --port=30303
+    - --http
+    - --http.addr=0.0.0.0
+    - --http.api=eth,net,web3,admin
+    - --http.corsdomain=*
+    - --ws
+    - --ws.origins=*
+    - --ws.addr=0.0.0.0
+    - --ws.api=eth,net,web3
+    - --authrpc.addr=0.0.0.0
+    - --authrpc.jwtsecret=/data/jwt.hex
+    - --authrpc.port=8551
+  lighthouse:
+    image: '${LIGHTHOUSE_IMAGE}'
+    pull_policy: always
+    container_name: lighthouse
+    restart: unless-stopped
+    stop_grace_period: 2m
+    volumes:
+    - /data/lighthouse:/data
+    - /data/reth:/reth
+    ports:
+    - 8080:8080
+    - 9000:9000
+    - 9000:9000/udp
+    command:
+    - lighthouse
+    - bn
+    - --network=${NETWORK}
+    - --datadir=/data
+    - --execution-endpoint=http://reth:8551
+    - --execution-jwt=/reth/jwt.hex
+    - --http
+    - --http-allow-origin=*
+    - --http-port=8080
+    - --http-address=0.0.0.0
+    - --metrics
+    - --metrics-allow-origin=*
+    - --metrics-port=9090
+    - --metrics-address=0.0.0.0
+    - --checkpoint-sync-url=${CHECKPOINT_URL}
+    - --enr-address=${PUBLIC_IP}
+    - --slots-per-restore-point=${SPRP}
+    - --historic-state-cache-size=${HSCS}
+    - --purge-db
+    - --disable-backfill-rate-limiting
+    - --builder=http://mev-boost:18550
+  mev-boost: 
+    image: ${MEV_IMAGE}
+    pull_policy: always
+    container_name: mev-boost
+    restart: unless-stopped
+    stop_signal: SIGINT
+    stop_grace_period: 2m 
+    ports: 
+    - 18550:18550
+    command: 
+    - -${NETWORK}
+    - -relays
+    - ${MEV_RELAYS}
+    - -addr 
+    - 0.0.0.0:18550
