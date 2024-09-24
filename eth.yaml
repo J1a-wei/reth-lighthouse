@@ -25,12 +25,12 @@ services:
     - --port=30303
     - --http
     - --http.addr=0.0.0.0
-    - --http.api=eth,net,web3,admin
+    - --http.api=debug,eth,net,trace,txpool,web3,rpc,reth,ots
     - --http.corsdomain=*
     - --ws
     - --ws.origins=*
     - --ws.addr=0.0.0.0
-    - --ws.api=eth,net,web3
+    - --ws.api=debug,eth,net,trace,txpool,web3,rpc,reth,ots
     - --authrpc.addr=0.0.0.0
     - --authrpc.jwtsecret=/data/jwt.hex
     - --authrpc.port=8551
@@ -43,6 +43,7 @@ services:
     volumes:
     - /data/lighthouse:/data
     - /data/reth:/reth
+    - /data/state:/cp
     ports:
     - 8080:8080
     - 9000:9000
@@ -62,11 +63,13 @@ services:
     - --metrics-allow-origin=*
     - --metrics-port=9090
     - --metrics-address=0.0.0.0
-    - --checkpoint-sync-url=${CHECKPOINT_URL}
+    - --checkpoint-state=/cp/state.ssz
+    - --checkpoint-block=/cp/block.ssz
+    - --checkpoint-blobs=/cp/blobs.ssz
     - --enr-address=${PUBLIC_IP}
     - --slots-per-restore-point=${SPRP}
     - --historic-state-cache-size=${HSCS}
-    - --purge-db
+    - --reconstruct-historic-states
     - --disable-backfill-rate-limiting
     - --builder=http://mev-boost:18550
   mev-boost: 
